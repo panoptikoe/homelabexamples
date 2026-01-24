@@ -14,7 +14,7 @@ spec:
       services:
         - name: service-switch
           port: 80
-          serversTransport: switch-insecure  # Use the transport
+          serversTransport: switch-insecure
       middlewares:
         - name: default-headers
   tls:
