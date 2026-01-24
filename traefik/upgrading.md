@@ -1,0 +1,2 @@
+- edit image tag in values.yaml
+- helm upgrade traefik traefik/traefik --namespace traefik --values values.yaml
