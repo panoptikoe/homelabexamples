@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-settings
+  namespace: searxng
+data:
+  settings.yml: |
+    general:
+      use_default_settings: true
+
+    server:
+      secret_key: "<fill in some secret key here>"
+
+    default_doi_resolver: "https://doi.org/"
+
+    ui:
+      static_use_hash: true
+
+  limiter.toml: |
+    [botdetection]
+    # Disable bot detection
+    enabled = false
