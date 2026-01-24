@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-role
+  namespace: traefik
+rules:
+  # Allow access to services and endpoints (for external services)
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+  # Allow access to Traefik-specific CRDs
+  - apiGroups: ["traefik.io"]
+    resources: ["ingressroutes", "middlewares", "ingressroutetransports", "traefikservices"]
+    verbs: ["get", "list", "watch"]
