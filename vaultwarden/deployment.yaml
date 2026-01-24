@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+  labels:
+    app: vaultwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaultwarden
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+    spec:
+      dnsPolicy: Default
+      containers:
+      - name: vaultwarden
+        image: vaultwarden/server:1.34.3-alpine
+        ports:
+        - containerPort: 80
+        env:
+        - name: ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: vaultwarden-secret
+              key: VAULTWARDEN_ADMIN_TOKEN
+        - name: SIGNUPS_ALLOWED
+          value: "false"
+        - name: WEBSOCKET_ENABLED
+          value: "true"
+        - name: ROCKET_ENV
+          value: "prod"
+        - name: ROCKET_WORKERS
+          value: "10"
+        - name: TZ
+          value: "Europe/Amsterdam"
+        - name: LOG_LEVEL
+          value: "error"
+        - name: EXTENDED_LOGGING
+          value: "true"
+        - name: DOMAIN
+          value: "https://vault.local.yourdomain.com"
+        - name: INCOMPLETE_2FA_TIME_LIMIT
+          value: "3"
+        - name: ORG_CREATION_USERS
+          value: "none"
+        - name: LOG_LEVEL
+          value: "debug"
+        - name: DISABLE_ADMIN_TOKEN
+          value: "true"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "512m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1024m"
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: vaultwarden-pvc
+      dnsPolicy: Default
+      restartPolicy: Always
