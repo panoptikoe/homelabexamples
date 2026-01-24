@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apt-cacher-ng
+  namespace: apt-cacher-ng
+  labels:
+    app: apt-cacher-ng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apt-cacher-ng
+  template:
+    metadata:
+      labels:
+        app: apt-cacher-ng
+    spec:
+      dnsPolicy: Default
+      containers:
+        - name: apt-cacher-ng
+          image: digitalsparky/acng:latest
+          ports:
+            - containerPort: 3142
+          volumeMounts:
+            - name: cache-volume
+              mountPath: /var/cache/apt-cacher-ng
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: cache-volume
+          persistentVolumeClaim:
+            claimName: apt-cacher-ng-pvc  # Reference the PVC here
