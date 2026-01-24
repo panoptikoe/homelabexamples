@@ -1,0 +1,252 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: unifi-env
+  namespace: unifi-controller
+type: Opaque
+stringData:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "Europe/Amsterdam"
+  MONGO_USER: "unifi"
+  MONGO_PASS: "<nicetry>"
+  MONGO_DBNAME: "unifi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-init-scripts
+  namespace: unifi-controller
+data:
+  init-mongo.js: |
+    db.getSiblingDB("unifi").createUser({
+      user: "unifi",
+      pwd: "5nHgg3G0cH9d",
+      roles: [
+        { role: "dbOwner", db: "unifi" },
+        { role: "dbOwner", db: "unifi_stat" },
+        { role: "dbOwner", db: "ace" },
+        { role: "dbOwner", db: "unifi_events" },
+        { role: "read", db: "admin" }
+      ],
+    });
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unifi-db
+  namespace: unifi-controller
+  labels:
+    app: unifi-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unifi-db
+  template:
+    metadata:
+      labels:
+        app: unifi-db
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:4.4
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        - name: mongo-init
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: mongo-data
+        persistentVolumeClaim:
+          claimName: unifi-db
+      - name: mongo-init
+        configMap:
+          name: mongo-init-scripts
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: unifi-db
+  namespace: unifi-controller
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-db
+  namespace: unifi-controller
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  selector:
+    app: unifi-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unifi-controller
+  namespace: unifi-controller
+  labels:
+    app: unifi-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unifi-controller
+  template:
+    metadata:
+      labels:
+        app: unifi-controller
+    spec:
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        nameservers:
+          - <dns number 1>
+          - <dns number 2>
+        searches:
+          - unifi-controller.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+      containers:
+      - name: unifi
+        image: lscr.io/linuxserver/unifi-network-application:9.3.45-ls100
+        envFrom:
+        - secretRef:
+            name: unifi-env
+        env:
+          - name: MONGO_HOST
+            value: "unifi-db"
+          - name: MONGO_PORT
+            value: "27017"
+        ports:
+        - containerPort: 8443
+        - containerPort: 8080
+        - containerPort: 6789
+        - containerPort: 3478
+        - containerPort: 10001
+        - containerPort: 5514
+        volumeMounts:
+        - name: unifi-data
+          mountPath: /config
+      volumes:
+      - name: unifi-data
+        persistentVolumeClaim:
+          claimName: unifi-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: unifi-data
+  namespace: unifi-controller
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-tcp
+  namespace: unifi-controller
+  annotations:
+    metallb.universe.tf/allow-shared-ip: unifi-controller
+spec:
+  type: LoadBalancer
+  loadBalancerIP: <fill in an ip address here>
+  selector:
+    app: unifi-controller
+  ports:
+    - name: https
+      protocol: TCP
+      port: 8443
+      targetPort: 8443
+    - name: inform
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: speedtest
+      protocol: TCP
+      port: 6789
+      targetPort: 6789
+    - name: syslog-tcp
+      protocol: TCP
+      port: 5514
+      targetPort: 5514
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-udp
+  namespace: unifi-controller
+  annotations:
+    metallb.universe.tf/allow-shared-ip: unifi-controller
+spec:
+  type: LoadBalancer
+  loadBalancerIP: <should be the same ip address as above>
+  selector:
+    app: unifi-controller
+  ports:
+    - name: stun
+      protocol: UDP
+      port: 3478
+      targetPort: 3478
+    - name: discovery
+      protocol: UDP
+      port: 10001
+      targetPort: 10001
+    - name: syslog-udp
+      protocol: UDP
+      port: 5514
+      targetPort: 5514
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: default-headers
+  namespace: unifi-controller
+spec:
+  headers:
+    browserXssFilter: true
+    contentTypeNosniff: true
+    forceSTSHeader: true
+    stsIncludeSubdomains: true
+    stsPreload: true
+    stsSeconds: 15552000
+    referrerPolicy: no-referrer
+    contentSecurityPolicy: "default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
+    customFrameOptionsValue: SAMEORIGIN
+    customRequestHeaders:
+      X-Forwarded-Proto: https
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: unifi-controller
+  namespace: unifi-controller
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`unifi.local.yourdomain.com`)
+      kind: Rule
+      services:
+        - name: unifi-tcp
+          port: 8443
+      middlewares:
+        - name: default-headers
+  tls:
+    secretName: unifi-yourdomain-tls
