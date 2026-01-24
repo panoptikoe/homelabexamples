@@ -10,3 +10,4 @@ To the following repositories / people:
 - https://github.com/pimox/pimox7
 - https://github.com/timothystewart6/k3s-ansible (I wouldn't have even tried to do something with Kubernetes without it)
 - The makers of a shitload of opensource software I use regularly (OPNSense, Traefik, Proxmox, Linux, ... the list goes on and on)
+- And everyone else I forgot!
