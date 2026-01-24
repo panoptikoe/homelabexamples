@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitea-db-secret
+  namespace: gitea
+type: Opaque
+stringData:
+  DB_TYPE: mysql
+  HOST: gitea-mysql.gitea.svc.cluster.local
+  PORT: "3306"
+  NAME: gitea
+  USER: gitea
+  PASSWD: <fillinsomepasswordhere>
+  MYSQL_ROOT_PASSWORD: <supersecretrootpasswordexample>
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-mysql-pvc
+  namespace: gitea
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-mysql-init
+  namespace: gitea
+data:
+  init.sql: |
+    CREATE USER IF NOT EXISTS 'gitea'@'%' IDENTIFIED BY 'giteapassword';
+    GRANT ALL PRIVILEGES ON gitea.* TO 'gitea'@'%';
+    FLUSH PRIVILEGES;
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-mysql
+  namespace: gitea
+  labels:
+    app: gitea-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-mysql
+  template:
+    metadata:
+      labels:
+        app: gitea-mysql
+    spec:
+      dnsPolicy: Default #so the pod is using the same DNS server as your node which is convenient
+      containers:
+      - name: gitea-mysql
+        image: mysql:5.7
+        ports:
+          - containerPort: 3306
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: gitea-db-secret
+                key: MYSQL_ROOT_PASSWORD
+          - name: MYSQL_DATABASE
+            value: gitea
+        volumeMounts:
+          - name: mysql-data
+            mountPath: /var/lib/mysql
+          - name: mysql-init
+            mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: gitea-mysql-pvc
+        - name: mysql-init
+          configMap:
+            name: gitea-mysql-init
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-mysql
+  namespace: gitea
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: gitea-mysql
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-pvc
+  namespace: gitea
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+  labels:
+    app: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      dnsPolicy: Default
+      containers:
+      - name: gitea
+        image: gitea/gitea:1.21.0
+        ports:
+        - containerPort: 3000
+        - containerPort: 22
+        envFrom:
+        - secretRef:
+            name: gitea-db-secret
+        volumeMounts:
+        - name: gitea-data
+          mountPath: /data
+      volumes:
+      - name: gitea-data
+        persistentVolumeClaim:
+          claimName: gitea-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+    - name: ssh
+      port: 222
+      targetPort: 22
+  selector:
+    app: gitea
