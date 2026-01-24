@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingressroute-homeassistant
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`homeassistant.local.yourdomain.com`)
+      kind: Rule
+      services:
+        - name: service-homeassistant
+          port: 8123
+          serversTransport: switch-homeassistant  # Use the transport
+      middlewares:
+        - name: default-headers
+  tls:
+    secretName: wildcard-yourdomain-tls
