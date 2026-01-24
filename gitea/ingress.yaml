@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitea
+  namespace: gitea
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`gitea.local.yourdomain.com`)
+      kind: Rule
+      services:
+        - name: gitea
+          port: 3000
+      middlewares:
+        - name: default-headers
+  tls:
+    secretName: gitea-yourdomain-tls
