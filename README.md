@@ -13,3 +13,6 @@ To the following repositories / people:
 - https://github.com/timothystewart6/k3s-ansible (I wouldn't have even tried to do something with Kubernetes without it)
 - The makers of a shitload of opensource software I use regularly (OPNSense, Traefik, Proxmox, Linux, ... the list goes on and on)
 - And everyone else I forgot!
+
+## Warranty
+There is none! Please be careful, never ever just copy paste something from GitHub just because someone else said "well it's working for me". These are configurations that worked for me, maybe they can help you.
