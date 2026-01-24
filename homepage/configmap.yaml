@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+data:
+  kubernetes.yaml: ""
+  settings.yaml: |
+    title: <fill in the title here>
+    headerStyle: boxedWidgets
+    hideVersion: false
+    hideErrors: true
+    fiveColumns: true
+    useEqualHeights: true
+    fullWidth:  true
+    target: _blank
+    groupsInitiallyCollapsed: false
+    showStats: true
+    providers:
+      openweathermap: <see gethomepage.dev for how this works>
+      weathermap: <see gethomepage.dev for how this works>
+    providers:
+      longhorn:
+        url: https://longhorn.my.network
+  custom.css: ""
+  custom.js: ""
+  bookmarks.yaml: ""
+
+  services.yaml: |
+  <fill in here, obviously with the correct indentation>
+
+  widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: false
+          cpu: false
+          memory: false
+          showLabel: false
+          label: "cluster"
+        nodes:
+          show: false
+          cpu: false
+          memory: false
+          showLabel: false
+    - resources:
+        backend: resources
+        expanded: true
+        cpu: true
+        memory: true
+    - search:
+        provider: custom
+        url: <fill in your searxng url>
+        target: _blank
+        suggestionUrl: https://search.local.yourdomain.com/autocomplete?q=
+        showSearchSuggestions: true
+    - datetime:
+        text_size: xl
+        locale: nl
+        format:
+          dateStyle: short
+          timeStyle: short
+    - openweathermap:
+        label: <see gethomepage.dev for how this works>
+        latitude: <see gethomepage.dev for how this works>
+        longitude: <see gethomepage.dev for how this works>
+        units: metric
+        provider: <see gethomepage.dev for how this works>
+        cache: 5
+        format:
+          maximumFractionDigits: 1
+  docker.yaml: ""
