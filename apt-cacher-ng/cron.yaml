@@ -1,0 +1,81 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: debian-trixie-cache-warmer
+  namespace: apt-cacher-ng
+spec:
+  schedule: "0 3 * * *" # Daily at 3AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+          containers:
+          - name: debian-warmer
+            image: debian:trixie
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eux
+                apt-get update
+                apt-get install -y wget gnupg ca-certificates
+                # Add Proxmox signing key
+                wget -qO /usr/share/keyrings/proxmox-archive-keyring.gpg https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg
+                # Add Proxmox repository
+                cat > /etc/apt/sources.list.d/proxmox.sources <<'EOF'
+                Types: deb
+                URIs: http://download.proxmox.com/debian/pve
+                Suites: trixie
+                Components: pve-no-subscription
+                Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+                EOF
+                # Update and upgrade with Proxmox included
+                apt-get update
+                apt-get dist-upgrade -y
+                apt-get clean
+            env:
+              - name: http_proxy
+                value: "http://apt-cacher-ng:3142"
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
+              limits:
+                cpu: "500m"
+                memory: "256Mi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ubuntu-noble-cache-warmer
+  namespace: apt-cacher-ng
+spec:
+  schedule: "30 3 * * *" # Daily at 3:30AM (staggered)
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+          containers:
+          - name: ubuntu-warmer
+            image: ubuntu:24.04
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eux
+                apt-get update
+                apt-get dist-upgrade -y
+                apt-get clean
+            env:
+              - name: http_proxy
+                value: "http://apt-cacher-ng:3142"
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
+              limits:
+                cpu: "500m"
+                memory: "256Mi"
