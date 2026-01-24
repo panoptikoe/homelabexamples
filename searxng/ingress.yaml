@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`search.yourdomain.panoptikoen.com`)
+    - match: Host(`search.local.panoptikoen.com`)
       kind: Rule
       services:
         - name: searxng
