@@ -5,6 +5,8 @@ In short, i have two proxmox nodes where I run a lot of VMs on, an OPNSense fire
 
 Feel free to use these examples if it is in any way useful to you. I'm by no means an expert and have hacked my way through this, after work and in weekends / vacations. Any questions can be posed by opening an issue or contacting me through GitHub; I'll try to get back to them.
 
+I'll probably add some docker examples as well, since not everything works well in Kubernetes (why I'm saying this after troubleshooting a Unifi-controller in Kubernetes is weird, I know).
+
 ## Thank you
 To the following repositories / people:
 - https://github.com/pimox/pimox7
