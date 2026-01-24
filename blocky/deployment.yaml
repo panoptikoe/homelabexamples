@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: blocky
+  namespace: blocky
+spec:
+  selector:
+    matchLabels:
+      app: blocky
+  template:
+    metadata:
+      labels:
+        app: blocky
+    spec:
+      containers:
+        - name: blocky
+          image: spx01/blocky:main
+          ports:
+            - containerPort: 53
+              protocol: UDP
+            - containerPort: 4000
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yml
+              subPath: config.yml
+              readOnly: true
+          resources:
+            requests:
+              memory: "25Mi"
+              cpu: "20m"
+            limits:
+              memory: "50Mi"
+              cpu: "40m"
+      volumes:
+        - name: config
+          configMap:
+            name: blocky-config
