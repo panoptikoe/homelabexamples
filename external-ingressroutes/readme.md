@@ -2,4 +2,4 @@ This folder contains examples of how you can use Traefik as a reverse proxy with
 
 I included these examples specifically since, for some reason, it took me a lot of time to get this working for these three.
 
-This obviously needs a working Traefik deployment and a working Cert-manager deployment. I followed this guide: https://technotim.com/posts/kube-traefik-cert-manager-le/ to do that.
+This obviously needs a working Traefik deployment and a working Cert-manager deployment. I followed [this guide](https://technotim.com/posts/kube-traefik-cert-manager-le/) to do that.
