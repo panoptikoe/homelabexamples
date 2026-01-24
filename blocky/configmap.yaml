@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocky-config
+  namespace: blocky
+data:
+  config.yml: |
+    blocking:
+      denylists:
+        ads:
+          - https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+          - https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling/hosts
+          - https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-only/hosts
+      clientGroupsBlock:
+        default:
+          - ads
+    upstreams:
+      strategy: strict
+      groups:
+        default:
+          - <dns number one here>
+          - <dns number two here>
+    ports:
+      dns: 53
+      http: 4000
+    prometheus:
+      enable: true
+    customDNS:
+      customTTL: 1h
+      filterUnmappedTypes: true
+      mapping:
+       <fill in your dns entries here>
+       <format should be "$hostname: $ip-address">
+    caching:
+      minTime: 5m
+      maxTime: 10m
+      prefetching: true
