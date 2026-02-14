@@ -29,3 +29,5 @@ This is a cheatsheet. When I find out about useful commands, i drop them in one 
 14. `kubectl exec --stdin --tty pod/nameofpod --namespace namespace -- /bin/sh`
 
 15. `kubectl exec --stdin --tty pod/nameofpod --namespace namespace -- /bin/bash`
+
+16. `kubectl logs deployment/deploymentname -f --namespace=namespaceofdeployment --timestamps`
